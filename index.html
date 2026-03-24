@@ -8,53 +8,42 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
-        
         :root { --primary: #00ffcc; --bg: #050505; }
         body { background: var(--bg); color: var(--primary); font-family: 'JetBrains+Mono', monospace; margin: 0; overflow: hidden; user-select: none; }
-
         .crt::before {
             content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
                         linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
             z-index: 100; background-size: 100% 2px, 3px 100%; pointer-events: none;
         }
-
         .glass { background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(20px); border: 1px solid rgba(0, 255, 204, 0.2); }
-
         .card {
             width: 130px; height: 180px; border: 1px solid var(--primary);
             background: rgba(0, 255, 204, 0.03); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; padding: 12px;
         }
-        .card:hover:not(.disabled) { transform: translateY(-15px) rotate(1deg); box-shadow: 0 0 30px var(--primary); background: var(--primary); color: black; z-index: 50; }
+        .card:hover:not(.disabled) { transform: translateY(-20px) rotate(2deg); box-shadow: 0 0 30px var(--primary); background: var(--primary); color: black; z-index: 50; }
         .card.disabled { opacity: 0.1; cursor: not-allowed; border-color: #222; }
-
         input { background: rgba(255, 255, 255, 0.05) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; color: white !important; outline: none; text-align: center; }
-        input:focus { border-color: var(--primary) !important; box-shadow: 0 0 10px rgba(0, 255, 204, 0.2); }
-
         .hidden { display: none !important; }
         .glow-red { color: #ff3366; border-color: #ff3366; }
         .glow-blue { color: #3399ff; border-color: #3399ff; }
         .glow-gold { color: #ffcc33; border-color: #ffcc33; }
-        
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
     </style>
 </head>
 <body class="crt h-screen flex items-center justify-center">
 
-    <!-- DIAGNOSTIC -->
+    <!-- INITIALIZATION -->
     <div id="screen-loading" class="flex flex-col items-center text-center px-6">
         <div class="w-10 h-10 border-2 border-t-[#00ffcc] border-white/5 rounded-full animate-spin mb-6"></div>
-        <p class="text-[10px] tracking-[0.5em] uppercase opacity-40 mb-4">Синхронизация с узлом...</p>
-        <div id="status-log" class="text-[8px] space-y-1 uppercase opacity-30">
-            <div>Протокол: Инициализация</div>
-        </div>
+        <p class="text-[10px] tracking-[0.5em] uppercase opacity-40 mb-4">Синхронизация протокола...</p>
+        <div id="status-log" class="text-[8px] space-y-1 uppercase opacity-30"></div>
     </div>
 
-    <!-- AUTH -->
-    <div id="screen-auth" class="hidden glass w-full max-w-md p-10 rounded-2xl z-10">
-        <h1 class="text-6xl font-black italic tracking-tighter mb-2 text-center text-white uppercase font-mono leading-none">THE <span class="text-[#00ffcc]">FIRST</span></h1>
-        <p class="text-[9px] text-center opacity-30 mb-10 tracking-[0.4em] uppercase font-bold">Manual Access Protocol</p>
+    <!-- AUTHENTICATION -->
+    <div id="screen-auth" class="hidden glass w-full max-w-md p-10 rounded-2xl z-10 shadow-2xl">
+        <h1 class="text-6xl font-black italic tracking-tighter mb-2 text-center text-white uppercase leading-none">THE <span class="text-[#00ffcc]">FIRST</span></h1>
+        <p class="text-[9px] text-center opacity-30 mb-10 tracking-[0.4em] uppercase font-bold">Manual Access Override</p>
         
         <form id="auth-form" class="flex flex-col gap-6">
             <div class="flex flex-col gap-2">
@@ -62,78 +51,78 @@
                 <input type="text" id="auth-login" placeholder="NICKNAME" class="p-4 rounded-xl text-lg uppercase" required>
             </div>
             <div class="flex flex-col gap-2">
-                <label class="text-[9px] uppercase tracking-widest opacity-60 ml-1 font-bold">Ключ доступа</label>
+                <label class="text-[9px] uppercase tracking-widest opacity-60 ml-1 font-bold">Пароль</label>
                 <input type="password" id="auth-password" placeholder="••••••••" class="p-4 rounded-xl text-lg" required>
             </div>
             <p id="auth-error" class="text-red-500 text-[10px] uppercase font-bold text-center bg-red-500/10 py-2 border border-red-500/20 hidden"></p>
-            <button type="submit" id="auth-submit-btn" class="bg-[#00ffcc] text-black py-4 font-black uppercase hover:bg-white transition-all transform active:scale-95 rounded-xl text-xl shadow-lg">Войти</button>
+            <button type="submit" id="auth-submit-btn" class="bg-[#00ffcc] text-black py-4 font-black uppercase hover:bg-white transition-all transform active:scale-95 rounded-xl text-xl shadow-lg font-mono">Вход</button>
             <button type="button" id="toggle-auth" class="text-[10px] text-zinc-500 hover:text-white uppercase tracking-widest text-center mt-2 font-bold">Создать новый аккаунт</button>
         </form>
     </div>
 
     <!-- LOBBY -->
     <div id="screen-lobby" class="hidden glass w-full max-w-2xl p-12 rounded-3xl z-10 text-center">
-        <div class="flex justify-between items-center mb-12 opacity-30 text-[9px] tracking-widest font-bold">
-            <button onclick="location.reload()" class="hover:text-red-500 uppercase">Disconnect</button>
+        <div class="flex justify-between items-center mb-12 opacity-30 text-[9px] tracking-widest font-bold uppercase">
+            <button onclick="location.reload()" class="hover:text-red-500 uppercase">Exit</button>
             <p id="user-id-display">SESSION::---</p>
         </div>
-        <h1 class="text-8xl font-black italic tracking-tighter mb-4 text-white uppercase">THE <span class="text-[#00ffcc]">FIRST</span></h1>
+        <h1 class="text-8xl font-black italic tracking-tighter mb-4 text-white uppercase leading-none">THE <span class="text-[#00ffcc]">FIRST</span></h1>
         <div class="grid grid-cols-2 gap-10 my-16 bg-white/5 p-8 rounded-2xl border border-white/5">
-            <div class="text-left">
-                <p class="text-[10px] opacity-40 uppercase tracking-widest mb-1 font-bold">Статус</p>
-                <p id="lobby-rank" class="text-4xl font-black italic uppercase text-[#00ffcc]">---</p>
-            </div>
-            <div class="text-right">
-                <p class="text-[10px] opacity-40 uppercase tracking-widest mb-1 font-bold">Колода</p>
-                <p id="lobby-cards" class="text-6xl font-black text-white">0</p>
-            </div>
+            <div class="text-left"><p class="text-[10px] opacity-40 uppercase font-bold">Статус</p><p id="lobby-rank" class="text-4xl font-black italic uppercase text-[#00ffcc]">---</p></div>
+            <div class="text-right"><p class="text-[10px] opacity-40 uppercase font-bold">Колода</p><p id="lobby-cards" class="text-6xl font-black text-white">0</p></div>
         </div>
         <div class="flex flex-col gap-6">
-            <button onclick="createNewDuel()" class="w-full py-6 border-2 border-white font-black hover:bg-white hover:text-black transition-all uppercase tracking-[0.2em] text-2xl">Инициировать Дуэль</button>
+            <button onclick="createNewDuel()" class="w-full py-6 border-2 border-white font-black hover:bg-white hover:text-black transition-all uppercase tracking-[0.2em] text-2xl">Создать Дуэль</button>
             <div class="flex gap-4">
                 <input type="text" id="room-input" maxlength="4" placeholder="КОД ЦЕЛИ" class="flex-grow bg-white/5 border border-white/10 text-center text-white outline-none focus:border-[#00ffcc] font-black text-3xl py-4 rounded-xl">
-                <button onclick="joinDuel()" class="border-2 border-red-600 text-red-600 px-12 font-black hover:bg-red-600 hover:text-white transition-all uppercase text-xl rounded-xl font-mono">Перехват</button>
+                <button onclick="joinDuel()" class="border-2 border-red-600 text-red-600 px-12 font-black hover:bg-red-600 hover:text-white transition-all uppercase text-xl rounded-xl">Вступить</button>
             </div>
         </div>
         <p id="lobby-status" class="mt-8 text-[#00ffcc88] text-[10px] uppercase tracking-[0.4em] font-black h-4 animate-pulse"></p>
     </div>
 
-    <!-- GAME -->
+    <!-- GAME UI -->
     <div id="screen-game" class="hidden w-full max-w-7xl h-full flex flex-col justify-between py-12 z-10">
+        <!-- Enemy -->
         <div class="flex justify-between items-center px-20 py-10 glass rounded-3xl mx-10 border-red-500/20">
             <div class="text-left">
-                <p class="text-[10px] opacity-40 uppercase tracking-[0.4em] mb-1">Объект</p>
+                <p class="text-[10px] opacity-40 uppercase tracking-[0.4em] mb-1">Оппонент</p>
                 <p id="enemy-rank" class="text-3xl font-black italic text-red-600 uppercase tracking-tighter">ВРАГ</p>
-                <div class="text-8xl font-black text-white mt-2">HP: <span id="enemy-hp">6</span></div>
+                <div class="text-8xl font-black text-white mt-2">HP: <span id="enemy-hp">0</span></div>
             </div>
             <div class="text-right space-y-2">
                 <div id="enemy-pulse" class="w-6 h-6 rounded-full ml-auto bg-zinc-800 transition-all duration-500 shadow-lg"></div>
-                <p class="text-[10px] opacity-20 uppercase tracking-widest mt-4 font-bold italic font-mono">Signal Locked</p>
+                <p id="enemy-conn-status" class="text-[10px] opacity-20 uppercase tracking-widest mt-4 font-bold italic font-mono">Searching...</p>
             </div>
         </div>
 
+        <!-- Center Battle info -->
         <div class="flex flex-col items-center">
             <div id="turn-indicator" class="text-4xl font-black uppercase tracking-[1em] mb-10 text-zinc-800 transition-all">АНАЛИЗ...</div>
-            <div id="battle-log" class="h-44 overflow-y-auto w-full max-w-2xl bg-black/80 p-8 border border-white/5 no-scrollbar text-xs leading-relaxed italic"></div>
+            <div id="battle-log" class="h-44 overflow-y-auto w-full max-w-2xl bg-black/80 p-8 border border-white/5 no-scrollbar text-xs leading-relaxed italic opacity-40"></div>
         </div>
 
+        <!-- Player -->
         <div class="flex flex-col gap-12">
             <div class="flex justify-between px-20">
                 <div class="text-left border-l-8 border-[#00ffcc] pl-8">
-                    <p class="text-[10px] opacity-40 uppercase tracking-[0.4em] mb-1">Твой Протокол</p>
+                    <p class="text-[10px] opacity-40 uppercase tracking-[0.4em] mb-1">Протокол</p>
                     <p id="player-rank" class="text-3xl font-black text-[#00ffcc] uppercase tracking-tighter">ПЕРВЫЙ</p>
-                    <div class="text-8xl font-black text-white mt-2">HP: <span id="player-hp">6</span></div>
+                    <div class="text-8xl font-black text-white mt-2">HP: <span id="player-hp">0</span></div>
                 </div>
             </div>
-            <div id="hand" class="flex justify-center gap-8 h-64 items-end px-10"></div>
+            <!-- РУКА КАРТ -->
+            <div id="hand" class="flex justify-center gap-8 h-64 items-end px-10">
+                <p class="text-[10px] animate-pulse opacity-20 uppercase">Загрузка данных колоды...</p>
+            </div>
         </div>
     </div>
 
-    <!-- END -->
+    <!-- END SCREEN -->
     <div id="screen-end" class="hidden fixed inset-0 z-[500] bg-black flex flex-col items-center justify-center text-center p-10 font-mono">
         <h1 id="end-title" class="text-[12rem] font-black italic uppercase leading-none mb-6">ОБНУЛЕН</h1>
         <p id="end-sub" class="text-white uppercase tracking-[1em] text-xl mb-24 font-light opacity-50">Цикл завершен.</p>
-        <button onclick="location.reload()" class="px-24 py-8 border-4 border-white font-black uppercase tracking-widest text-3xl hover:bg-white hover:text-black transition-all transform active:scale-95 shadow-2xl">Вернуться в Лобби</button>
+        <button onclick="location.reload()" class="px-24 py-8 border-4 border-white font-black uppercase tracking-widest text-3xl hover:bg-white hover:text-black transition-all transform active:scale-95 shadow-2xl font-mono">Вернуться</button>
     </div>
 
     <script type="module">
@@ -141,7 +130,6 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getDatabase, ref, set, get, update, onValue, off, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Твой конфиг со скриншота
         const firebaseConfig = {
             apiKey: "AIzaSyBMTaOtOQLsdJBLjN1AXO6X_NW47xSOMno",
             authDomain: "first-d1462.firebaseapp.com",
@@ -182,10 +170,10 @@
 
         // --- AUTH ---
         signInAnonymously(auth).then(() => {
-            logStatus("База данных: Связь установлена");
+            logStatus("Связь установлена. Вход разрешен.");
             showScreen('screen-auth');
         }).catch(e => {
-            logStatus("Ошибка связи: Включите Anonymous в Firebase");
+            logStatus("Ошибка! Включите Anonymous в Firebase Console.");
             showScreen('screen-auth');
         });
 
@@ -200,27 +188,22 @@
             try {
                 const snap = await get(userRef);
                 if (authMode === 'login') {
-                    if (!snap.exists()) throw new Error("ID не найден");
-                    if (snap.val().password !== pass) throw new Error("Ключ не подходит");
+                    if (!snap.exists()) throw new Error("ID НЕ НАЙДЕН");
+                    if (snap.val().password !== pass) throw new Error("КЛЮЧ НЕ ВЕРЕН");
                     userData = snap.val();
                 } else {
-                    if (snap.exists()) throw new Error("ID уже в сети");
+                    if (snap.exists()) throw new Error("ID ЗАНЯТ");
                     userData = { login, password: pass, cards: 6, rank: 'Первый', wins: 0 };
                     await set(userRef, userData);
                 }
                 currentUser = login;
-                loginSuccess();
+                updateLobbyUI();
+                showScreen('screen-lobby');
             } catch (err) {
                 errEl.innerText = err.message.toUpperCase();
                 errEl.classList.remove('hidden');
             }
         };
-
-        function loginSuccess() {
-            document.getElementById('user-id-display').innerText = `USER::${currentUser}`;
-            updateLobbyUI();
-            showScreen('screen-lobby');
-        }
 
         document.getElementById('toggle-auth').onclick = () => {
             authMode = authMode === 'login' ? 'register' : 'login';
@@ -228,76 +211,111 @@
             document.getElementById('auth-submit-btn').innerText = authMode === 'login' ? 'Войти' : 'Зарегистрировать';
         };
 
-        // --- GAME ---
+        // --- DUELS ---
         window.createNewDuel = async () => {
-            if (userData.cards <= 0) return alert("РЕСУРС ИСЧЕРПАН");
+            if (userData.cards <= 0) return alert("НЕТ КАРТ");
             const id = Math.floor(1000 + Math.random() * 9000).toString();
             currentRoomId = id; myRole = 'player1';
             
-            const roomRef = ref(db, 'rooms/' + id);
-            await set(roomRef, {
-                status: "waiting",
-                player1: { login: currentUser, hp: 6, rank: userData.rank, hand: generateHand(), blocking: false },
-                turn: "player1", lastAction: "КАНАЛ ОТКРЫТ"
-            });
-            document.getElementById('lobby-status').innerText = `КОД КАНАЛА: ${id}`;
-            listenToRoom(id);
+            try {
+                const roomRef = ref(db, 'rooms/' + id);
+                await set(roomRef, {
+                    status: "waiting",
+                    player1: { login: currentUser, hp: 6, rank: userData.rank, hand: generateHand(), blocking: false },
+                    turn: "player1", lastAction: "КАНАЛ СОЗДАН"
+                });
+                document.getElementById('lobby-status').innerText = `КОД КАНАЛА: ${id}`;
+                listenToRoom(id);
+            } catch (e) { alert("Ошибка! Проверьте правила (Rules) Realtime Database."); }
         };
 
         window.joinDuel = async () => {
             const id = document.getElementById('room-input').value;
             if (!id) return;
-            const roomRef = ref(db, 'rooms/' + id);
-            const snap = await get(roomRef);
-            if (!snap.exists()) return alert("КАНАЛ НЕ НАЙДЕН");
-            
             currentRoomId = id; myRole = 'player2';
-            await update(roomRef, {
-                player2: { login: currentUser, hp: 6, rank: userData.rank, hand: generateHand(), blocking: false },
-                status: "active", lastAction: "СВЯЗЬ УСТАНОВЛЕНА"
-            });
-            listenToRoom(id);
+            try {
+                const roomRef = ref(db, 'rooms/' + id);
+                const snap = await get(roomRef);
+                if (!snap.exists()) return alert("КАНАЛ НЕ НАЙДЕН");
+                
+                await update(roomRef, {
+                    player2: { login: currentUser, hp: 6, rank: userData.rank, hand: generateHand(), blocking: false },
+                    status: "active", lastAction: "СВЯЗЬ УСТАНОВЛЕНА"
+                });
+                listenToRoom(id);
+            } catch (e) { alert("Ошибка подключения."); }
         };
 
-        function generateHand() { return Array.from({length: 5}, () => Object.keys(CARDS)[Math.floor(Math.random() * 5)]); }
+        function generateHand() { 
+            return Array.from({length: 5}, () => Object.keys(CARDS)[Math.floor(Math.random() * 5)]); 
+        }
 
         function listenToRoom(id) {
             onValue(ref(db, 'rooms/' + id), (snap) => {
                 const data = snap.val();
                 if (!data) return;
+                
+                // Переключаем экран только когда зашел второй игрок
                 if (data.status === 'active') {
                     showScreen('screen-game');
                     updateBattleUI(data);
+                } else {
+                    document.getElementById('battle-log').innerText = "Ожидание второго игрока...";
                 }
             });
         }
 
         function updateBattleUI(data) {
-            const me = data[myRole], enemyRole = myRole === 'player1' ? 'player2' : 'player1', enemy = data[enemyRole];
+            const me = data[myRole];
+            if (!me) return;
+
+            const enemyRole = myRole === 'player1' ? 'player2' : 'player1';
+            const enemy = data[enemyRole];
+
             document.getElementById('player-hp').innerText = me.hp;
             document.getElementById('player-rank').innerText = me.rank;
+            
             if (enemy) {
                 document.getElementById('enemy-hp').innerText = enemy.hp;
                 document.getElementById('enemy-rank').innerText = enemy.rank;
                 document.getElementById('enemy-pulse').style.background = '#ff3366';
                 document.getElementById('enemy-pulse').classList.add('animate-pulse');
+                document.getElementById('enemy-conn-status').innerText = "Link Active";
             }
+
             const isMyTurn = data.turn === myRole;
             const turnEl = document.getElementById('turn-indicator');
             turnEl.innerText = isMyTurn ? "ТВОЙ ХОД" : "АНАЛИЗ ВРАГА";
             turnEl.style.color = isMyTurn ? "#00ffcc" : "#1a1a1a";
-            renderHand(me.hand, isMyTurn);
+
+            // ВАЖНО: Превращаем hand в массив, если Firebase вернул объект
+            const handArray = me.hand ? (Array.isArray(me.hand) ? me.hand : Object.values(me.hand)) : [];
+            renderHand(handArray, isMyTurn);
+
             if(data.lastAction) addLog(data.lastAction);
             if (me.hp <= 0 && !isDead) resolveGame(false);
             if (enemy && enemy.hp <= 0 && !isDead) resolveGame(true);
         }
 
         function renderHand(hand, active) {
-            const container = document.getElementById('hand'); container.innerHTML = '';
+            const container = document.getElementById('hand'); 
+            container.innerHTML = '';
+            
+            if (hand.length === 0) {
+                container.innerHTML = '<p class="text-[8px] opacity-20 uppercase">Колода пуста. Добор...</p>';
+                return;
+            }
+
             hand.forEach((key, idx) => {
-                const c = CARDS[key], div = document.createElement('div');
+                const c = CARDS[key];
+                if (!c) return;
+                const div = document.createElement('div');
                 div.className = `card ${c.color} ${!active ? 'disabled' : ''}`;
-                div.innerHTML = `<div class="text-[9px] opacity-40 font-black">#${key}</div><div class="text-2xl font-black leading-none uppercase">${c.name}</div><div class="text-[9px] opacity-60 font-bold uppercase">${c.desc}</div>`;
+                div.innerHTML = `
+                    <div class="text-[9px] opacity-40 font-black tracking-widest">ID::${key}</div>
+                    <div class="text-2xl font-black leading-none uppercase">${c.name}</div>
+                    <div class="text-[9px] font-bold opacity-60 uppercase">${c.desc}</div>
+                `;
                 if(active) div.onclick = () => playCard(key, idx);
                 container.appendChild(div);
             });
@@ -311,12 +329,15 @@
 
             const enemyRole = myRole === 'player1' ? 'player2' : 'player1';
             const me = data[myRole], enemy = data[enemyRole];
-            let nEnemyHp = enemy.hp, nMyHp = me.hp, nHand = [...me.hand], act = "";
+            let nEnemyHp = enemy.hp, nMyHp = me.hp, act = "";
+            
+            // Работаем с рукой
+            let nHand = me.hand ? (Array.isArray(me.hand) ? [...me.hand] : Object.values(me.hand)) : [];
             nHand.splice(idx, 1);
 
             if (key === 'STRIKE') {
-                if (enemy.blocking) act = `${userData.login}: В БЛОК`;
-                else { nEnemyHp -= 2; act = `${userData.login}: УКОЛ (-2)`; }
+                if (enemy.blocking) act = `${userData.login}: УКОЛ В БЛОК`;
+                else { nEnemyHp -= 2; act = `${userData.login}: ПРЯМОЙ УКОЛ`; }
             } else if (key === 'BLOCK') act = `${userData.login}: ЗАЩИТА`;
             else if (key === 'ECHO') { nMyHp *= 2; act = `${userData.login}: ЭХО (X2)`; }
             else if (key === 'ALL_IN') { nEnemyHp -= 4; nHand = []; act = `${userData.login}: ВА-БАНК!`; }
@@ -325,20 +346,33 @@
             if (nHand.length === 0) nHand = generateHand();
 
             await update(roomRef, {
-                [enemyRole + '/hp']: Math.max(0, nEnemyHp), [enemyRole + '/blocking']: false,
-                [myRole + '/hp']: nMyHp, [myRole + '/blocking']: (key === 'BLOCK' || key === 'SHADOW'),
-                [myRole + '/hand']: nHand, turn: enemyRole, lastAction: act
+                [enemyRole + '/hp']: Math.max(0, nEnemyHp), 
+                [enemyRole + '/blocking']: false,
+                [myRole + '/hp']: nMyHp, 
+                [myRole + '/blocking']: (key === 'BLOCK' || key === 'SHADOW'),
+                [myRole + '/hand']: nHand, 
+                turn: enemyRole, 
+                lastAction: act
             });
         }
 
         async function resolveGame(won) {
-            isDead = true; off(ref(db, 'rooms/' + currentRoomId));
-            let change = won ? 4 : -3; userData.cards = Math.max(0, userData.cards + change);
-            if (won) userData.wins++;
+            isDead = true; 
+            off(ref(db, 'rooms/' + currentRoomId));
+            
+            let change = won ? 4 : -3; 
+            userData.cards = Math.max(0, (userData.cards || 0) + change);
+            if (won) userData.wins = (userData.wins || 0) + 1;
+            
             const rank = [...RANKS].reverse().find(r => userData.cards >= r.min) || RANKS[0];
             userData.rank = rank.name;
+            
             await set(ref(db, 'users/' + currentUser), userData);
-            if (myRole === 'player1') setTimeout(() => remove(ref(db, 'rooms/' + currentRoomId)), 4000);
+            
+            if (myRole === 'player1') {
+                setTimeout(() => remove(ref(db, 'rooms/' + currentRoomId)), 5000);
+            }
+            
             showScreen('screen-end');
             const title = document.getElementById('end-title');
             if (won) { title.innerText = "ВЫСШИЙ"; title.style.color = "#00ffcc"; } 
@@ -353,7 +387,8 @@
         }
 
         function updateLobbyUI() {
-            const rank = RANKS.find(r => r.name === userData.rank);
+            const rank = RANKS.find(r => r.name === userData.rank) || RANKS[0];
+            document.getElementById('user-id-display').innerText = `USER::${currentUser}`;
             document.getElementById('lobby-rank').innerText = userData.rank;
             document.getElementById('lobby-rank').style.color = rank.color;
             document.getElementById('lobby-cards').innerText = userData.cards;
@@ -367,6 +402,8 @@
             div.innerText = `> ${msg}`;
             log.prepend(div);
         }
+
+        window.oncontextmenu = (e) => e.preventDefault();
     </script>
 </body>
 </html>
