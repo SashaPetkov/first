@@ -21,9 +21,10 @@
             width: 130px; height: 180px; border: 1px solid var(--primary);
             background: rgba(0, 255, 204, 0.03); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; padding: 12px;
+            box-shadow: inset 0 0 15px rgba(0, 255, 204, 0.05);
         }
         .card:hover:not(.disabled) { transform: translateY(-20px) rotate(2deg); box-shadow: 0 0 30px var(--primary); background: var(--primary); color: black; z-index: 50; }
-        .card.disabled { opacity: 0.1; cursor: not-allowed; border-color: #222; }
+        .card.disabled { opacity: 0.1; cursor: not-allowed; border-color: #222; filter: grayscale(1); }
         input { background: rgba(255, 255, 255, 0.05) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; color: white !important; outline: none; text-align: center; }
         .hidden { display: none !important; }
         .glow-red { color: #ff3366; border-color: #ff3366; }
@@ -85,7 +86,7 @@
 
     <!-- GAME UI -->
     <div id="screen-game" class="hidden w-full max-w-7xl h-full flex flex-col justify-between py-12 z-10">
-        <!-- Enemy -->
+        <!-- Enemy Section -->
         <div class="flex justify-between items-center px-20 py-10 glass rounded-3xl mx-10 border-red-500/20 shadow-2xl">
             <div class="text-left">
                 <p class="text-[10px] opacity-40 uppercase tracking-[0.4em] mb-1 font-bold">Оппонент</p>
@@ -98,24 +99,24 @@
             </div>
         </div>
 
-        <!-- Center Log -->
+        <!-- Center Battle Log -->
         <div class="flex flex-col items-center">
             <div id="turn-indicator" class="text-4xl font-black uppercase tracking-[1em] mb-10 text-zinc-900 transition-all font-mono">АНАЛИЗ...</div>
             <div id="battle-log" class="h-44 overflow-y-auto w-full max-w-2xl bg-black/80 p-8 border border-white/5 no-scrollbar text-xs leading-relaxed italic opacity-60 font-mono"></div>
         </div>
 
-        <!-- Player -->
+        <!-- Player Section -->
         <div class="flex flex-col gap-12">
             <div class="flex justify-between px-20">
-                <div class="text-left border-l-8 border-[#00ffcc] pl-8 shadow-[inset_10px_0_10px_-10px_#00ffcc]">
+                <div class="text-left border-l-8 border-[#00ffcc] pl-8 shadow-[inset:10px_0_10px_-10px_#00ffcc]">
                     <p class="text-[10px] opacity-40 uppercase tracking-[0.4em] mb-1 font-bold">Твой Протокол</p>
                     <p id="player-rank" class="text-3xl font-black text-[#00ffcc] uppercase tracking-tighter font-mono">ПЕРВЫЙ</p>
                     <div class="text-8xl font-black text-white mt-2 font-mono">HP: <span id="player-hp">0</span></div>
                 </div>
             </div>
             <!-- Hand -->
-            <div id="hand" class="flex justify-center gap-8 h-64 items-end px-10">
-                <p class="text-[10px] animate-pulse opacity-20 uppercase tracking-widest">Инициализация данных...</p>
+            <div id="hand" class="flex justify-center gap-6 h-64 items-end px-10">
+                <p class="text-[10px] animate-pulse opacity-20 uppercase tracking-widest">Инициализация данных колоды...</p>
             </div>
         </div>
     </div>
@@ -124,7 +125,7 @@
     <div id="screen-end" class="hidden fixed inset-0 z-[500] bg-black flex flex-col items-center justify-center text-center p-10 font-mono">
         <h1 id="end-title" class="text-[12rem] font-black italic uppercase leading-none mb-6">ОБНУЛЕН</h1>
         <p id="end-sub" class="text-white uppercase tracking-[1em] text-xl mb-24 font-light opacity-50">Цикл завершен.</p>
-        <button onclick="location.reload()" class="px-24 py-8 border-4 border-white font-black uppercase tracking-widest text-3xl hover:bg-white hover:text-black transition-all transform active:scale-95 shadow-2xl">Вернуться в систему</button>
+        <button onclick="location.reload()" class="px-24 py-8 border-4 border-white font-black uppercase tracking-widest text-3xl hover:bg-white hover:text-black transition-all transform active:scale-95 shadow-2xl">Вернуться в лобби</button>
     </div>
 
     <script type="module">
@@ -224,7 +225,7 @@
                 await set(roomRef, {
                     status: "waiting",
                     player1: { login: currentUser, hp: 6, rank: userData.rank, hand: generateHand(), blocking: false },
-                    turn: "player1", lastAction: `Канал открыт. Код доступа: ${id}`
+                    turn: "player1", lastAction: `Канал открыт. Код: ${id}`
                 });
                 showScreen('screen-game');
                 listenToRoom(id);
@@ -250,7 +251,8 @@
         };
 
         function generateHand() { 
-            return Array.from({length: 5}, () => Object.keys(CARDS)[Math.floor(Math.random() * 5)]); 
+            const keys = Object.keys(CARDS);
+            return Array.from({length: 5}, () => keys[Math.floor(Math.random() * keys.length)]); 
         }
 
         function listenToRoom(id) {
@@ -268,33 +270,25 @@
             const enemyRole = myRole === 'player1' ? 'player2' : 'player1';
             const enemy = data[enemyRole];
 
-            // Update My HP
+            // HP и Ранги
             document.getElementById('player-hp').innerText = me.hp;
             document.getElementById('player-rank').innerText = me.rank;
             
-            // Sync Enemy
             const eRankEl = document.getElementById('enemy-rank');
             const eHpEl = document.getElementById('enemy-hp');
             const ePulse = document.getElementById('enemy-pulse');
             const eStatus = document.getElementById('enemy-conn-status');
 
             if (enemy) {
-                eRankEl.innerText = enemy.rank || "---";
+                eRankEl.innerText = (enemy.login || "ENEMY") + " [" + (enemy.rank || "---") + "]";
                 eHpEl.innerText = enemy.hp;
                 ePulse.style.background = '#ff3366';
                 ePulse.classList.add('animate-pulse');
-                eStatus.innerText = "Link Active";
-                eStatus.classList.remove('animate-pulse');
+                eStatus.innerText = "Signal Locked";
                 eStatus.style.opacity = "1";
-            } else {
-                eRankEl.innerText = "ПОИСК...";
-                eHpEl.innerText = "0";
-                ePulse.style.background = '#333';
-                ePulse.classList.remove('animate-pulse');
-                eStatus.innerText = "Waiting for link...";
             }
 
-            // Turn Handling
+            // Очередность хода
             const isMyTurn = data.turn === myRole && data.status === 'active';
             const turnEl = document.getElementById('turn-indicator');
             
@@ -303,16 +297,26 @@
                 turnEl.style.color = "#444";
             } else {
                 turnEl.innerText = isMyTurn ? "ТВОЙ ХОД" : "АНАЛИЗ ВРАГА";
-                turnEl.style.color = isMyTurn ? "#00ffcc" : "#400";
+                turnEl.style.color = isMyTurn ? "#00ffcc" : "#441111";
             }
 
-            // Cards Rendering
-            const handArray = me.hand ? (Array.isArray(me.hand) ? me.hand : Object.values(me.hand)) : [];
+            // ОБРАБОТКА КАРТ (Протокол восстановления)
+            let handArray = [];
+            if (me.hand) {
+                handArray = Array.isArray(me.hand) ? me.hand : Object.values(me.hand);
+            }
+            
+            // Если в активном бою рука пуста (баг данных), добираем принудительно
+            if (data.status === 'active' && handArray.length === 0 && !isDead) {
+                const fallbackHand = generateHand();
+                update(ref(db, 'rooms/' + currentRoomId + '/' + myRole), { hand: fallbackHand });
+                handArray = fallbackHand;
+            }
+
             renderHand(handArray, isMyTurn);
 
             if(data.lastAction) addLog(data.lastAction);
             
-            // Win/Loss Condition
             if (me.hp <= 0 && !isDead) resolveGame(false);
             if (enemy && enemy.hp <= 0 && !isDead) resolveGame(true);
         }
@@ -321,7 +325,7 @@
             const container = document.getElementById('hand'); 
             container.innerHTML = '';
             
-            if (hand.length === 0) return;
+            if (!hand || hand.length === 0) return;
 
             hand.forEach((key, idx) => {
                 const c = CARDS[key];
@@ -330,7 +334,7 @@
                 div.className = `card ${c.color} ${!active ? 'disabled' : ''}`;
                 div.innerHTML = `
                     <div class="text-[9px] opacity-40 font-black tracking-widest font-mono">ID::${key}</div>
-                    <div class="text-2xl font-black leading-none uppercase font-mono">${c.name}</div>
+                    <div class="text-xl font-black leading-none uppercase font-mono">${c.name}</div>
                     <div class="text-[10px] font-bold opacity-60 uppercase font-mono">${c.desc}</div>
                 `;
                 if(active) div.onclick = () => playCard(key, idx);
@@ -346,18 +350,19 @@
 
             const enemyRole = myRole === 'player1' ? 'player2' : 'player1';
             const me = data[myRole], enemy = data[enemyRole];
-            let nEnemyHp = enemy.hp, nMyHp = me.hp, act = "";
             
             let nHand = me.hand ? (Array.isArray(me.hand) ? [...me.hand] : Object.values(me.hand)) : [];
             nHand.splice(idx, 1);
 
+            let nEnemyHp = enemy.hp, nMyHp = me.hp, act = "";
+
             if (key === 'STRIKE') {
                 if (enemy.blocking) act = `${userData.login}: УКОЛ В БЛОК`;
-                else { nEnemyHp -= 2; act = `${userData.login}: УКОЛ (-2)`; }
-            } else if (key === 'BLOCK') act = `${userData.login}: ПОДГОТОВКА ЗАЩИТЫ`;
+                else { nEnemyHp -= 2; act = `${userData.login}: ПРЯМОЙ УКОЛ`; }
+            } else if (key === 'BLOCK') act = `${userData.login}: ЗАЩИТА`;
             else if (key === 'ECHO') { nMyHp *= 2; act = `${userData.login}: ЭХО (X2)`; }
-            else if (key === 'ALL_IN') { nEnemyHp -= 4; nHand = []; act = `${userData.login}: ВА-БАНК! (-4)`; }
-            else if (key === 'SHADOW') act = `${userData.login}: УХОД В ТЕНЬ`;
+            else if (key === 'ALL_IN') { nEnemyHp -= 4; nHand = []; act = `${userData.login}: ВА-БАНК!`; }
+            else if (key === 'SHADOW') act = `${userData.login}: ТЕНЬ`;
 
             if (nHand.length === 0) nHand = generateHand();
 
@@ -381,24 +386,21 @@
             userData.cards = Math.max(0, (userData.cards || 0) + change);
             if (won) userData.wins = (userData.wins || 0) + 1;
             
-            const rank = [...RANKS].reverse().find(r => userData.cards >= r.min) || RANKS[0];
-            userData.rank = rank.name;
+            const rankData = [...RANKS].reverse().find(r => userData.cards >= r.min) || RANKS[0];
+            userData.rank = rankData.name;
             
             await set(ref(db, 'users/' + currentUser), userData);
-            
-            if (myRole === 'player1') {
-                setTimeout(() => remove(ref(db, 'rooms/' + currentRoomId)), 6000);
-            }
+            if (myRole === 'player1') setTimeout(() => remove(ref(db, 'rooms/' + currentRoomId)), 6000);
             
             showScreen('screen-end');
             const title = document.getElementById('end-title');
             const sub = document.getElementById('end-sub');
             if (won) { 
                 title.innerText = "ВЫСШИЙ"; title.style.color = "#00ffcc"; 
-                sub.innerText = `ЦИКЛ ЗАВЕРШЕН. ПОГЛОЩЕНО +${change} КАРТ.`;
+                sub.innerText = `ПОГЛОЩЕНО +${change} КАРТ.`;
             } else { 
                 title.innerText = "ОБНУЛЕН"; title.style.color = "#ff3366"; 
-                sub.innerText = `РЕСУРС ИСТОЩЕН. ПОТЕРЯНО 3 КАРТЫ.`;
+                sub.innerText = `ПОТЕРЯНО 3 КАРТЫ.`;
             }
         }
 
