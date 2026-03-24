@@ -2,58 +2,84 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The First: Online Battle</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #050505; color: #00ffcc; font-family: 'Courier New', monospace; overflow: hidden; }
+        body { background: #050505; color: #00ffcc; font-family: 'Courier New', monospace; overflow-x: hidden; }
         .crt::before { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03)); z-index: 100; background-size: 100% 2px, 3px 100%; pointer-events: none; }
-        .card-btn { border: 1px solid #00ffcc; padding: 15px; cursor: pointer; transition: 0.2s; background: rgba(0, 255, 204, 0.05); }
-        .card-btn:hover { background: #00ffcc; color: #000; box-shadow: 0 0 15px #00ffcc; }
+        .card-btn { border: 1px solid #00ffcc; padding: 15px; cursor: pointer; transition: 0.2s; background: rgba(0, 255, 204, 0.05); text-transform: uppercase; font-weight: bold; }
+        .card-btn:hover:not(:disabled) { background: #00ffcc; color: #000; box-shadow: 0 0 15px #00ffcc; }
+        .card-btn:disabled { border-color: #333; color: #333; cursor: not-allowed; }
         .hidden { display: none; }
+        .log-entry { animation: fadeIn 0.3s ease-out; border-bottom: 1px solid #111; padding: 2px 0; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
     </style>
 </head>
 <body class="crt h-screen flex flex-col items-center justify-center p-4">
 
-    <div id="lobby" class="text-center z-10">
-        <h1 class="text-6xl font-bold mb-10 tracking-tighter italic">THE FIRST <span class="text-white">NET</span></h1>
-        <button onclick="createNewDuel()" class="card-btn text-xl mb-4 w-64">СОЗДАТЬ ДУЭЛЬ</button>
-        <p id="room-code-display" class="text-2xl text-white mb-8"></p>
+    <!-- ЛОББИ -->
+    <div id="lobby" class="text-center z-10 w-full max-w-md">
+        <h1 class="text-6xl font-bold mb-4 tracking-tighter italic italic">THE FIRST</h1>
+        <p class="text-[10px] tracking-[0.3em] uppercase opacity-40 mb-10">Сетевой протокол: Активен</p>
         
-        <div class="border-t border-zinc-800 pt-8 flex flex-col items-center">
-            <input id="room-id-input" type="text" placeholder="КОД КОМНАТЫ" class="p-3 bg-transparent border border-zinc-700 mb-4 text-center text-white outline-none focus:border-cyan-400">
-            <button onclick="joinDuel()" class="card-btn border-red-500 text-red-500 hover:bg-red-500 w-64">ВСТУПИТЬ В БОЙ</button>
+        <div class="flex flex-col gap-4 mb-10">
+            <button onclick="createNewDuel()" class="card-btn text-xl">Создать дуэль</button>
+            <p id="room-code-display" class="text-3xl text-white font-bold tracking-widest"></p>
         </div>
-        <p id="status" class="mt-6 text-zinc-500 animate-pulse"></p>
+
+        <div class="border-t border-zinc-800 pt-8 flex flex-col items-center">
+            <input id="room-id-input" type="text" maxlength="4" placeholder="КОД (4 ЦИФРЫ)" class="p-3 bg-zinc-900 border border-zinc-700 mb-4 text-center text-white outline-none focus:border-cyan-400 w-full">
+            <button onclick="joinDuel()" class="card-btn border-red-500 text-red-500 hover:bg-red-500 w-full">Вступить в бой</button>
+        </div>
+        <p id="status-msg" class="mt-6 text-zinc-600 text-xs uppercase tracking-widest"></p>
     </div>
 
+    <!-- ИГРОВОЕ ПОЛЕ -->
     <div id="game-ui" class="hidden w-full max-w-2xl z-10">
-        <div class="flex justify-between mb-10 border-b border-zinc-800 pb-4">
+        <div class="flex justify-between items-end mb-10 border-b border-zinc-800 pb-6">
             <div class="text-left">
-                <p class="text-xs opacity-50 uppercase">Твой статус</p>
-                <p class="text-2xl font-bold">ПЕРВЫЙ</p>
-                <p class="text-4xl text-white mt-2">HP: <span id="my-hp">6</span></p>
+                <p class="text-[10px] opacity-50 uppercase tracking-widest">Твой статус</p>
+                <p class="text-xl font-bold text-cyan-400" id="p-rank">ПЕРВЫЙ</p>
+                <div class="text-5xl text-white mt-1 font-black">HP: <span id="my-hp">6</span></div>
+            </div>
+            <div class="text-center pb-2">
+                <div class="text-[10px] opacity-30 uppercase">vs</div>
             </div>
             <div class="text-right">
-                <p class="text-xs opacity-50 uppercase">Враг</p>
-                <p id="enemy-rank" class="text-2xl font-bold text-red-500 italic">???</p>
-                <p class="text-4xl text-red-500 mt-2">HP: <span id="enemy-hp">6</span></p>
+                <p class="text-[10px] opacity-50 uppercase tracking-widest">Враг</p>
+                <p id="enemy-rank" class="text-xl font-bold text-red-500 italic uppercase">Охотник</p>
+                <div class="text-5xl text-red-500 mt-1 font-black">HP: <span id="enemy-hp">6</span></div>
             </div>
         </div>
 
-        <div id="turn-indicator" class="text-center mb-8 text-xl font-bold uppercase tracking-widest text-yellow-500">Ожидание...</div>
+        <div id="turn-indicator" class="text-center mb-8 text-sm font-bold uppercase tracking-[0.5em] text-yellow-500 animate-pulse">
+            Синхронизация...
+        </div>
 
-        <div class="grid grid-cols-2 gap-4" id="controls">
-            <button onclick="playStrike()" id="strike-btn" class="card-btn">УКОЛ (-2 HP)</button>
-            <button onclick="playBlock()" id="block-btn" class="card-btn border-blue-400 text-blue-400 hover:bg-blue-400">БЛОК (X)</button>
+        <div class="grid grid-cols-2 gap-4 mb-8" id="controls">
+            <button onclick="playMove('STRIKE')" id="strike-btn" class="card-btn py-6">Укол <span class="block text-[10px] opacity-60">[-2 HP]</span></button>
+            <button onclick="playMove('BLOCK')" id="block-btn" class="card-btn border-blue-500 text-blue-500 py-6">Блок <span class="block text-[10px] opacity-60">[Защита]</span></button>
         </div>
         
-        <div id="battle-log" class="mt-10 h-24 overflow-y-auto text-xs text-zinc-500 border-l border-zinc-800 pl-4"></div>
+        <div class="bg-black/50 p-4 rounded border border-zinc-900">
+            <p class="text-[10px] uppercase opacity-30 mb-2 tracking-widest">Архив действий</p>
+            <div id="battle-log" class="h-24 overflow-y-auto text-[10px] text-zinc-500 space-y-1"></div>
+        </div>
+    </div>
+
+    <!-- ПОБЕДА / ПОРАЖЕНИЕ -->
+    <div id="end-screen" class="hidden fixed inset-0 z-[200] bg-black/95 flex flex-col items-center justify-center text-center p-6">
+        <h1 id="end-title" class="text-8xl font-black mb-4 italic uppercase">Обнулен</h1>
+        <p id="end-sub" class="text-zinc-500 max-w-md mb-10 tracking-widest uppercase">Твоя колода рассыпалась в прах.</p>
+        <button onclick="location.reload()" class="card-btn px-10">Вернуться в систему</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+        // КОНФИГУРАЦИЯ С ИСПРАВЛЕННЫМ URL
         const firebaseConfig = {
             apiKey: "AIzaSyBMTaOtOQLsdJBLjN1AXO6X_NW47xSOMno",
             authDomain: "first-d1462.firebaseapp.com",
@@ -61,44 +87,46 @@
             storageBucket: "first-d1462.firebasestorage.app",
             messagingSenderId: "965718104080",
             appId: "1:965718104080:web:0cd3a4aca0cc012a049295",
-            databaseURL: "https://first-d1462-default-rtdb.firebaseio.com"
+            databaseURL: "https://first-d1462-default-rtdb.europe-west1.firebasedatabase.app"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
         let roomID = null;
-        let myRole = null; // player1 или player2
-        let myData = { hp: 6 };
-        let enemyData = { hp: 6 };
+        let myRole = null; 
         let currentTurn = "";
+        let isDead = false;
 
-        // ФУНКЦИИ ЛОББИ
+        // --- ЛОББИ ---
         window.createNewDuel = async function() {
             roomID = Math.floor(1000 + Math.random() * 9000);
             myRole = 'player1';
-            const roomRef = ref(db, 'rooms/' + roomID);
             
+            const roomRef = ref(db, 'rooms/' + roomID);
             await set(roomRef, {
                 status: "waiting",
-                player1: { hp: 6, rank: "Первый" },
-                player2: { hp: 6, rank: "Первый" },
-                turn: "player1"
+                player1: { hp: 6, blocking: false },
+                player2: { hp: 6, blocking: false },
+                turn: "player1",
+                lastAction: "Дуэль создана"
             });
 
-            document.getElementById('room-code-display').innerText = "КОД: " + roomID;
-            document.getElementById('status').innerText = "Ждем второго игрока...";
+            document.getElementById('room-code-display').innerText = roomID;
+            document.getElementById('status-msg').innerText = "Ожидание цели...";
             listenToRoom();
         };
 
         window.joinDuel = function() {
             roomID = document.getElementById('room-id-input').value;
-            if(!roomID) return;
+            if(!roomID || roomID.length < 4) return alert("Введите 4 цифры");
             myRole = 'player2';
-            update(ref(db, 'rooms/' + roomID), { status: "active" });
+            
+            update(ref(db, 'rooms/' + roomID), { status: "active", lastAction: "Противник подключен" });
             listenToRoom();
         };
 
+        // --- ГЕЙМПЛЕЙ ---
         function listenToRoom() {
             onValue(ref(db, 'rooms/' + roomID), (snapshot) => {
                 const data = snapshot.val();
@@ -109,48 +137,91 @@
                     document.getElementById('game-ui').classList.remove('hidden');
                     
                     currentTurn = data.turn;
-                    myData = data[myRole];
-                    enemyData = (myRole === 'player1') ? data.player2 : data.player1;
+                    const me = data[myRole];
+                    const enemy = (myRole === 'player1') ? data.player2 : data.player1;
 
-                    updateUI();
+                    updateUI(me, enemy, data.lastAction);
                 }
             });
         }
 
-        function updateUI() {
-            document.getElementById('my-hp').innerText = myData.hp;
-            document.getElementById('enemy-hp').innerText = enemyData.hp;
+        function updateUI(me, enemy, action) {
+            document.getElementById('my-hp').innerText = me.hp;
+            document.getElementById('enemy-hp').innerText = enemy.hp;
             
             const isMyTurn = (currentTurn === myRole);
-            document.getElementById('turn-indicator').innerText = isMyTurn ? "Твой ход" : "Ход врага";
+            const indicator = document.getElementById('turn-indicator');
+            indicator.innerText = isMyTurn ? "ТВОЙ ХОД" : "ОЖИДАНИЕ ВРАГА";
+            indicator.className = isMyTurn ? "text-center mb-8 text-sm font-bold uppercase tracking-[0.5em] text-cyan-400 animate-pulse" : "text-center mb-8 text-sm font-bold uppercase tracking-[0.5em] text-red-900";
+
             document.getElementById('strike-btn').disabled = !isMyTurn;
-            document.getElementById('strike-btn').style.opacity = isMyTurn ? "1" : "0.3";
+            document.getElementById('block-btn').disabled = !isMyTurn;
 
-            if(myData.hp <= 0) alert("ТЫ ОБНУЛЕН.");
-            if(enemyData.hp <= 0) alert("ВРАГ ОБНУЛЕН. ТЫ - ВЫСШИЙ.");
+            if (action) addLog(action);
+
+            // Проверка смерти
+            if(me.hp <= 0 && !isDead) endGame(false);
+            if(enemy.hp <= 0 && !isDead) endGame(true);
         }
 
-        // БОЕВАЯ ЛОГИКА
-        window.playStrike = function() {
-            if(currentTurn !== myRole) return;
-            
+        window.playMove = function(type) {
+            if(currentTurn !== myRole || isDead) return;
+
             const enemyRole = (myRole === 'player1') ? 'player2' : 'player1';
-            const newEnemyHP = Math.max(0, enemyData.hp - 2);
-            const nextTurn = enemyRole;
+            const roomRef = ref(db, 'rooms/' + roomID);
+            
+            onValue(roomRef, (snapshot) => {
+                const data = snapshot.val();
+                const enemy = data[enemyRole];
+                const me = data[myRole];
+                
+                let nextHp = enemy.hp;
+                let actionText = "";
 
-            const updates = {};
-            updates[`rooms/${roomID}/${enemyRole}/hp`] = newEnemyHP;
-            updates[`rooms/${roomID}/turn`] = nextTurn;
-            updates[`rooms/${roomID}/lastLog`] = `${myRole} нанес укол!`;
+                if(type === 'STRIKE') {
+                    if(enemy.blocking) {
+                        actionText = `${myRole} ударил в БЛОК!`;
+                    } else {
+                        nextHp = Math.max(0, enemy.hp - 2);
+                        actionText = `${myRole} нанес УКОЛ (-2)`;
+                    }
+                } else if(type === 'BLOCK') {
+                    actionText = `${myRole} выставил защиту`;
+                }
 
-            update(ref(db), updates);
-            log(`Ты нанес укол. У врага осталось ${newEnemyHP} HP`);
-        };
-
-        function log(msg) {
-            const l = document.getElementById('battle-log');
-            l.innerHTML = `> ${msg}<br>` + l.innerHTML;
+                // Отправляем данные (только один раз!)
+                update(ref(db, 'rooms/' + roomID), {
+                    [enemyRole + '/hp']: nextHp,
+                    [enemyRole + '/blocking']: false, // Сбрасываем блок врага после его получения урона или хода
+                    [myRole + '/blocking']: (type === 'BLOCK'),
+                    turn: enemyRole,
+                    lastAction: actionText
+                });
+            }, { onlyOnce: true });
         }
+
+        function addLog(msg) {
+            const log = document.getElementById('battle-log');
+            if(log.firstChild && log.firstChild.innerText === msg) return;
+            const entry = document.createElement('div');
+            entry.className = "log-entry";
+            entry.innerText = `> ${msg}`;
+            log.prepend(entry);
+        }
+
+        function endGame(win) {
+            isDead = true;
+            const screen = document.getElementById('end-screen');
+            const title = document.getElementById('end-title');
+            screen.classList.remove('hidden');
+            if(win) {
+                title.innerText = "ВЫСШИЙ";
+                title.className = "text-8xl font-black mb-4 italic uppercase text-cyan-400";
+                document.getElementById('end-sub').innerText = "Ты поглотил чужую колоду.";
+            }
+        }
+
+        window.oncontextmenu = (e) => e.preventDefault();
     </script>
 </body>
 </html>
