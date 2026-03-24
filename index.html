@@ -18,7 +18,7 @@
         }
         .glass { background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(20px); border: 1px solid rgba(0, 255, 204, 0.2); }
         .card {
-            width: 130px; height: 180px; border: 1px solid var(--primary);
+            width: 135px; height: 185px; border: 1px solid var(--primary);
             background: rgba(0, 255, 204, 0.03); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; padding: 12px;
             box-shadow: inset 0 0 15px rgba(0, 255, 204, 0.05);
@@ -66,16 +66,16 @@
     <!-- LOBBY -->
     <div id="screen-lobby" class="hidden glass w-full max-w-2xl p-12 rounded-3xl z-10 text-center">
         <div class="flex justify-between items-center mb-12 opacity-30 text-[9px] tracking-widest font-bold uppercase">
-            <button onclick="location.reload()" class="hover:text-red-500 uppercase">Exit</button>
+            <button onclick="location.reload()" class="hover:text-red-500 uppercase transition-colors">Exit</button>
             <p id="user-id-display">SESSION::---</p>
         </div>
         <h1 class="text-8xl font-black italic tracking-tighter mb-4 text-white uppercase leading-none font-mono">THE <span class="text-[#00ffcc]">FIRST</span></h1>
-        <div class="grid grid-cols-2 gap-10 my-16 bg-white/5 p-8 rounded-2xl border border-white/5">
+        <div class="grid grid-cols-2 gap-10 my-16 bg-white/5 p-8 rounded-2xl border border-white/5 shadow-inner">
             <div class="text-left"><p class="text-[10px] opacity-40 uppercase font-bold tracking-widest">Статус</p><p id="lobby-rank" class="text-4xl font-black italic uppercase text-[#00ffcc]">---</p></div>
             <div class="text-right"><p class="text-[10px] opacity-40 uppercase font-bold tracking-widest">Колода</p><p id="lobby-cards" class="text-6xl font-black text-white">0</p></div>
         </div>
         <div class="flex flex-col gap-6">
-            <button onclick="createNewDuel()" class="w-full py-6 border-2 border-white font-black hover:bg-white hover:text-black transition-all uppercase tracking-[0.2em] text-2xl shadow-xl">Создать Дуэль</button>
+            <button onclick="createNewDuel()" class="w-full py-6 border-2 border-white font-black hover:bg-white hover:text-black transition-all uppercase tracking-[0.2em] text-2xl shadow-xl active:scale-95">Создать Дуэль</button>
             <div class="flex gap-4">
                 <input type="text" id="room-input" maxlength="4" placeholder="КОД ЦЕЛИ" class="flex-grow bg-white/5 border border-white/10 text-center text-white outline-none focus:border-[#00ffcc] font-black text-3xl py-4 rounded-xl">
                 <button onclick="joinDuel()" class="border-2 border-red-600 text-red-600 px-12 font-black hover:bg-red-600 hover:text-white transition-all uppercase text-xl rounded-xl">Вступить</button>
@@ -87,7 +87,8 @@
     <!-- GAME UI -->
     <div id="screen-game" class="hidden w-full max-w-7xl h-full flex flex-col justify-between py-12 z-10">
         <!-- Enemy Section -->
-        <div class="flex justify-between items-center px-20 py-10 glass rounded-3xl mx-10 border-red-500/20 shadow-2xl">
+        <div class="flex justify-between items-center px-20 py-10 glass rounded-3xl mx-10 border-red-500/20 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-red-600/20"></div>
             <div class="text-left">
                 <p class="text-[10px] opacity-40 uppercase tracking-[0.4em] mb-1 font-bold">Оппонент</p>
                 <p id="enemy-rank" class="text-3xl font-black italic text-red-600 uppercase tracking-tighter">ПОИСК...</p>
@@ -102,20 +103,20 @@
         <!-- Center Battle Log -->
         <div class="flex flex-col items-center">
             <div id="turn-indicator" class="text-4xl font-black uppercase tracking-[1em] mb-10 text-zinc-900 transition-all font-mono">АНАЛИЗ...</div>
-            <div id="battle-log" class="h-44 overflow-y-auto w-full max-w-2xl bg-black/80 p-8 border border-white/5 no-scrollbar text-xs leading-relaxed italic opacity-60 font-mono"></div>
+            <div id="battle-log" class="h-44 overflow-y-auto w-full max-w-2xl bg-black/80 p-8 border border-white/5 no-scrollbar text-xs leading-relaxed italic opacity-60 font-mono shadow-inner"></div>
         </div>
 
         <!-- Player Section -->
         <div class="flex flex-col gap-12">
             <div class="flex justify-between px-20">
-                <div class="text-left border-l-8 border-[#00ffcc] pl-8 shadow-[inset:10px_0_10px_-10px_#00ffcc]">
+                <div class="text-left border-l-8 border-[#00ffcc] pl-8 shadow-[inset_10px_0_10px_-10px_#00ffcc] relative">
                     <p class="text-[10px] opacity-40 uppercase tracking-[0.4em] mb-1 font-bold">Твой Протокол</p>
                     <p id="player-rank" class="text-3xl font-black text-[#00ffcc] uppercase tracking-tighter font-mono">ПЕРВЫЙ</p>
                     <div class="text-8xl font-black text-white mt-2 font-mono">HP: <span id="player-hp">0</span></div>
                 </div>
             </div>
             <!-- Hand -->
-            <div id="hand" class="flex justify-center gap-6 h-64 items-end px-10">
+            <div id="hand" class="flex justify-center gap-8 h-64 items-end px-10">
                 <p class="text-[10px] animate-pulse opacity-20 uppercase tracking-widest">Инициализация данных колоды...</p>
             </div>
         </div>
@@ -123,9 +124,9 @@
 
     <!-- END SCREEN -->
     <div id="screen-end" class="hidden fixed inset-0 z-[500] bg-black flex flex-col items-center justify-center text-center p-10 font-mono">
-        <h1 id="end-title" class="text-[12rem] font-black italic uppercase leading-none mb-6">ОБНУЛЕН</h1>
+        <h1 id="end-title" class="text-[12rem] font-black italic uppercase leading-none mb-6 text-white drop-shadow-[0_0_50px_rgba(255,255,255,0.1)]">ОБНУЛЕН</h1>
         <p id="end-sub" class="text-white uppercase tracking-[1em] text-xl mb-24 font-light opacity-50">Цикл завершен.</p>
-        <button onclick="location.reload()" class="px-24 py-8 border-4 border-white font-black uppercase tracking-widest text-3xl hover:bg-white hover:text-black transition-all transform active:scale-95 shadow-2xl">Вернуться в лобби</button>
+        <button onclick="location.reload()" class="px-24 py-8 border-4 border-white font-black uppercase tracking-widest text-3xl hover:bg-white hover:text-black transition-all transform active:scale-95 shadow-2xl font-mono">Вернуться</button>
     </div>
 
     <script type="module">
@@ -221,10 +222,11 @@
             currentRoomId = id; myRole = 'player1';
             
             try {
+                const initialHand = generateHand();
                 const roomRef = ref(db, 'rooms/' + id);
                 await set(roomRef, {
                     status: "waiting",
-                    player1: { login: currentUser, hp: 6, rank: userData.rank, hand: generateHand(), blocking: false },
+                    player1: { login: currentUser, hp: 6, rank: userData.rank, hand: initialHand, blocking: false },
                     turn: "player1", lastAction: `Канал открыт. Код: ${id}`
                 });
                 showScreen('screen-game');
@@ -241,8 +243,9 @@
                 const snap = await get(roomRef);
                 if (!snap.exists()) return alert("КАНАЛ НЕ НАЙДЕН");
                 
+                const initialHand = generateHand();
                 await update(roomRef, {
-                    player2: { login: currentUser, hp: 6, rank: userData.rank, hand: generateHand(), blocking: false },
+                    player2: { login: currentUser, hp: 6, rank: userData.rank, hand: initialHand, blocking: false },
                     status: "active", lastAction: `${currentUser} ПОДКЛЮЧЕН`
                 });
                 showScreen('screen-game');
@@ -270,7 +273,7 @@
             const enemyRole = myRole === 'player1' ? 'player2' : 'player1';
             const enemy = data[enemyRole];
 
-            // HP и Ранги
+            // Update UI
             document.getElementById('player-hp').innerText = me.hp;
             document.getElementById('player-rank').innerText = me.rank;
             
@@ -286,9 +289,14 @@
                 ePulse.classList.add('animate-pulse');
                 eStatus.innerText = "Signal Locked";
                 eStatus.style.opacity = "1";
+                eStatus.classList.remove('animate-pulse');
+            } else {
+                eRankEl.innerText = "ПОИСК...";
+                eHpEl.innerText = "0";
+                ePulse.style.background = '#333';
+                eStatus.innerText = "Waiting for link...";
             }
 
-            // Очередность хода
             const isMyTurn = data.turn === myRole && data.status === 'active';
             const turnEl = document.getElementById('turn-indicator');
             
@@ -300,20 +308,21 @@
                 turnEl.style.color = isMyTurn ? "#00ffcc" : "#441111";
             }
 
-            // ОБРАБОТКА КАРТ (Протокол восстановления)
+            // --- ОБРАБОТКА КАРТ (ПРОТОКОЛ ИНЖЕКЦИИ) ---
             let handArray = [];
             if (me.hand) {
-                handArray = Array.isArray(me.hand) ? me.hand : Object.values(me.hand);
+                // Превращаем в массив, даже если это объект {0: 'STRIKE', 1: 'BLOCK'}
+                handArray = Object.values(me.hand).filter(v => typeof v === 'string');
             }
             
-            // Если в активном бою рука пуста (баг данных), добираем принудительно
+            // Если в активном бою рука пуста (сбой синхронизации), немедленно рисуем временные карты
             if (data.status === 'active' && handArray.length === 0 && !isDead) {
-                const fallbackHand = generateHand();
-                update(ref(db, 'rooms/' + currentRoomId + '/' + myRole), { hand: fallbackHand });
-                handArray = fallbackHand;
+                const fallback = generateHand();
+                renderHand(fallback, isMyTurn); // Рисуем сразу для UI
+                update(ref(db, 'rooms/' + currentRoomId + '/' + myRole), { hand: fallback }); // Шлем в базу
+            } else {
+                renderHand(handArray, isMyTurn);
             }
-
-            renderHand(handArray, isMyTurn);
 
             if(data.lastAction) addLog(data.lastAction);
             
@@ -323,15 +332,26 @@
 
         function renderHand(hand, active) {
             const container = document.getElementById('hand'); 
-            container.innerHTML = '';
+            // Если текущие карты в DOM совпадают с входящими, не перерисовываем (чтобы избежать мерцания)
+            const currentHandInDom = Array.from(container.querySelectorAll('.card')).map(c => c.dataset.key).join(',');
+            const newHandKeys = hand.join(',');
             
-            if (!hand || hand.length === 0) return;
+            if (currentHandInDom === newHandKeys && container.dataset.active === String(active)) return;
+
+            container.innerHTML = '';
+            container.dataset.active = active;
+
+            if (!hand || hand.length === 0) {
+                container.innerHTML = '<p class="text-[10px] animate-pulse opacity-10 uppercase tracking-widest">Buffer Empty...</p>';
+                return;
+            }
 
             hand.forEach((key, idx) => {
                 const c = CARDS[key];
                 if (!c) return;
                 const div = document.createElement('div');
                 div.className = `card ${c.color} ${!active ? 'disabled' : ''}`;
+                div.dataset.key = key;
                 div.innerHTML = `
                     <div class="text-[9px] opacity-40 font-black tracking-widest font-mono">ID::${key}</div>
                     <div class="text-xl font-black leading-none uppercase font-mono">${c.name}</div>
@@ -351,7 +371,7 @@
             const enemyRole = myRole === 'player1' ? 'player2' : 'player1';
             const me = data[myRole], enemy = data[enemyRole];
             
-            let nHand = me.hand ? (Array.isArray(me.hand) ? [...me.hand] : Object.values(me.hand)) : [];
+            let nHand = Object.values(me.hand).filter(v => typeof v === 'string');
             nHand.splice(idx, 1);
 
             let nEnemyHp = enemy.hp, nMyHp = me.hp, act = "";
@@ -397,7 +417,7 @@
             const sub = document.getElementById('end-sub');
             if (won) { 
                 title.innerText = "ВЫСШИЙ"; title.style.color = "#00ffcc"; 
-                sub.innerText = `ПОГЛОЩЕНО +${change} КАРТ.`;
+                sub.innerText = `ЦИКЛ ЗАВЕРШЕН. ПОГЛОЩЕНО +${change} КАРТ.`;
             } else { 
                 title.innerText = "ОБНУЛЕН"; title.style.color = "#ff3366"; 
                 sub.innerText = `ПОТЕРЯНО 3 КАРТЫ.`;
