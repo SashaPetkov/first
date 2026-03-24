@@ -79,7 +79,7 @@
             <button onclick="createNewDuel()" class="w-full py-2 border border-white/20 font-black hover:border-white transition-all uppercase text-[10px]">Личный Канал</button>
             <div class="flex gap-2">
                 <input type="text" id="room-input" maxlength="4" placeholder="КОД" class="flex-grow bg-white/5 border border-white/10 text-center text-white outline-none focus:border-[#00ffcc] font-black text-lg py-2 rounded-lg">
-                <button onclick="joinDuel()" class="border border-red-600 text-red-600 px-4 font-black hover:bg-red-600 hover:text-white transition-all uppercase text-[10px] rounded-lg">Вступить</button>
+                <button onclick="joinDuel()" class="border-2 border-red-600 text-red-600 px-4 font-black hover:bg-red-600 hover:text-white transition-all uppercase text-[10px] rounded-lg">Вступить</button>
             </div>
         </div>
         <p id="lobby-status" class="mt-4 text-[#00ffcc88] text-[7px] uppercase tracking-[0.2em] font-black h-4 animate-pulse"></p>
@@ -88,9 +88,9 @@
     <!-- GAME UI -->
     <div id="screen-game" class="hidden w-full max-w-5xl h-full flex flex-col justify-between py-2 z-10">
         <!-- Enemy -->
-        <div class="flex justify-between items-center px-8 py-3 glass rounded-xl mx-4 border-red-500/10 shadow-lg">
+        <div class="flex justify-between items-center px-8 py-3 glass rounded-xl mx-4 border-red-500/20 shadow-lg">
             <div class="text-left">
-                <p class="text-[7px] opacity-40 uppercase mb-1 font-bold">Оппонент</p>
+                <p class="text-[7px] opacity-40 uppercase tracking-[0.2em] mb-1 font-bold">Оппонент</p>
                 <p id="enemy-rank" class="text-sm font-black text-red-600 uppercase">ПОИСК...</p>
                 <div class="text-3xl font-black text-white">HP: <span id="enemy-hp">0</span></div>
             </div>
@@ -233,10 +233,12 @@
                     const s = res.snapshot.val();
                     if (s.matchedRoom) {
                         currentRoomId = s.matchedRoom; myRole = 'player2';
+                        const p2Hand = shuffle([...userData.deck]).slice(0, 5);
+                        // Player 1 Hand will be initialized on their side or we can try to guess but better let them self-init
                         await set(ref(db, 'rooms/' + currentRoomId), {
                             status: "active",
                             player1: { login: s.waiter.login, hp: 6, rank: s.waiter.rank, blocking: false },
-                            player2: { login: currentUser, hp: 6, rank: userData.rank, blocking: false },
+                            player2: { login: currentUser, hp: 6, rank: userData.rank, hand: p2Hand, blocking: false },
                             turn: "player1", lastAction: "РИСК НАЧАТ"
                         });
                         await remove(queueRef);
@@ -260,9 +262,10 @@
         window.createNewDuel = async () => {
             const id = Math.floor(1000 + Math.random() * 9000).toString();
             currentRoomId = id; myRole = 'player1';
+            const hand = shuffle([...userData.deck]).slice(0, 5);
             await set(ref(db, 'rooms/' + id), {
                 status: "waiting",
-                player1: { login: currentUser, hp: 6, rank: userData.rank, blocking: false },
+                player1: { login: currentUser, hp: 6, rank: userData.rank, hand: hand, blocking: false },
                 turn: "player1", lastAction: `Код: ${id}`
             });
             showScreen('screen-game');
@@ -273,11 +276,12 @@
             const id = document.getElementById('room-input').value;
             if (!id) return;
             currentRoomId = id; myRole = 'player2';
+            const hand = shuffle([...userData.deck]).slice(0, 5);
             const roomRef = ref(db, 'rooms/' + id);
             const snap = await get(roomRef);
             if (!snap.exists()) return alert("НЕТ КАНАЛА");
             await update(roomRef, {
-                player2: { login: currentUser, hp: 6, rank: userData.rank, blocking: false },
+                player2: { login: currentUser, hp: 6, rank: userData.rank, hand: hand, blocking: false },
                 status: "active", lastAction: `${currentUser} В СЕТИ`
             });
             showScreen('screen-game');
@@ -307,12 +311,18 @@
             const eStatus = document.getElementById('enemy-conn-status');
 
             if (enemy) {
-                eRankEl.innerText = `${enemy.login} [${enemy.rank}]`;
+                eRankEl.innerText = `${enemy.login || '---'} [${enemy.rank || '---'}]`;
                 eHpEl.innerText = enemy.hp;
                 ePulse.style.background = '#ff3366';
                 ePulse.classList.add('animate-pulse');
                 eStatus.innerText = "SIGNAL LOCKED";
                 eStatus.style.opacity = "1";
+            } else {
+                eRankEl.innerText = "ПОИСК...";
+                eHpEl.innerText = "0";
+                ePulse.style.background = '#333';
+                ePulse.classList.remove('animate-pulse');
+                eStatus.innerText = "LINKING";
             }
 
             const isMyTurn = data.turn === myRole && data.status === 'active';
@@ -325,13 +335,13 @@
                 turnEl.style.color = isMyTurn ? "#00ffcc" : "#300";
             }
 
-            // --- КРИТИЧЕСКИЙ ФИКС КАРТ ---
+            // --- ОБРАБОТКА КАРТ (ГЕЙТВЕЙ ИНЖЕКЦИИ) ---
             let handArray = [];
             if (me.hand) {
                 handArray = Object.values(me.hand).filter(v => typeof v === 'string');
             }
             
-            // Если бой активен, а карт нет - генерируем их из СВОЕЙ колоды 10 карт
+            // Если бой активен (уже кто-то подключился), а карт нет - генерируем их из СВОЕЙ колоды 10 карт
             if (data.status === 'active' && handArray.length === 0 && !isDead) {
                 const initialHand = shuffle([...userData.deck]).slice(0, 5);
                 update(ref(db, `rooms/${currentRoomId}/${myRole}`), { hand: initialHand });
@@ -374,14 +384,23 @@
             let newHand = [...currentHand];
             newHand.splice(idx, 1);
             
-            // Добор из колоды (те, что не в руке)
-            let drawPile = userData.deck.filter(c => !newHand.includes(c));
-            if (drawPile.length > 0) newHand.push(drawPile[Math.floor(Math.random() * drawPile.length)]);
-            else newHand.push(userData.deck[Math.floor(Math.random() * 10)]);
+            // --- УМНЫЙ ДОБОР С УЧЕТОМ ДУБЛИКАТОВ ---
+            let drawPile = [...userData.deck];
+            newHand.forEach(cInHand => {
+                const i = drawPile.indexOf(cInHand);
+                if (i > -1) drawPile.splice(i, 1);
+            });
+
+            if (drawPile.length > 0) {
+                newHand.push(drawPile[Math.floor(Math.random() * drawPile.length)]);
+            } else {
+                // Если колода закончилась (странно для 10 карт), просто дублируем одну
+                newHand.push(userData.deck[Math.floor(Math.random() * 10)]);
+            }
 
             let nEnemyHp = enemy.hp, nMyHp = me.hp, act = "";
             if (key === 'STRIKE') {
-                if (enemy.blocking) act = `${userData.login}: В БЛОК`;
+                if (enemy.blocking) act = `${userData.login}: УКОЛ В БЛОК`;
                 else { nEnemyHp -= 2; act = `${userData.login}: УКОЛ (-2)`; }
             } else if (key === 'BLOCK') act = `${userData.login}: ЗАЩИТА`;
             else if (key === 'CRASH') { 
