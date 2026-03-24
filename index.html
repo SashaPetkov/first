@@ -251,7 +251,8 @@
             currentRoomId = id;
             myRole = 'player1';
             
-            const roomRef = doc(db, 'artifacts', appId, 'public', 'rooms', id);
+            // Используем обязательный путь Rule 1: /artifacts/{appId}/public/data/{collection}/{doc}
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', id);
             await setDoc(roomRef, {
                 status: "waiting",
                 player1: { uid: user.uid, hp: 6, rank: userData.rank, hand: generateHand(), blocking: false },
@@ -267,7 +268,7 @@
         window.joinDuel = async () => {
             const id = document.getElementById('room-input').value;
             if (!id || userData.cards <= 0) return;
-            const roomRef = doc(db, 'artifacts', appId, 'public', 'rooms', id);
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', id);
             const snap = await getDoc(roomRef);
             if (!snap.exists()) return alert("КАНАЛ НЕ НАЙДЕН");
             
@@ -287,7 +288,7 @@
         }
 
         function listenToRoom(id) {
-            const roomRef = doc(db, 'artifacts', appId, 'public', 'rooms', id);
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', id);
             roomUnsubscribe = onSnapshot(roomRef, (snap) => {
                 const data = snap.data();
                 if (!data) return;
@@ -344,7 +345,7 @@
         }
 
         async function playCard(key, idx) {
-            const roomRef = doc(db, 'artifacts', appId, 'public', 'rooms', currentRoomId);
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
             const snap = await getDoc(roomRef);
             const data = snap.data();
             if (data.turn !== myRole || isDead) return;
@@ -394,7 +395,7 @@
 
             if (myRole === 'player1') {
                 setTimeout(async () => {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'rooms', currentRoomId));
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId));
                 }, 4000);
             }
 
