@@ -3,83 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The First: Online Battle</title>
+    <title>The First: Online Card Dystopia</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #050505; color: #00ffcc; font-family: 'Courier New', monospace; overflow-x: hidden; }
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        body { background: #050505; color: #00ffcc; font-family: 'JetBrains+Mono', monospace; overflow: hidden; }
         .crt::before { content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03)); z-index: 100; background-size: 100% 2px, 3px 100%; pointer-events: none; }
-        .card-btn { border: 1px solid #00ffcc; padding: 15px; cursor: pointer; transition: 0.2s; background: rgba(0, 255, 204, 0.05); text-transform: uppercase; font-weight: bold; }
-        .card-btn:hover:not(:disabled) { background: #00ffcc; color: #000; box-shadow: 0 0 15px #00ffcc; }
-        .card-btn:disabled { border-color: #333; color: #333; cursor: not-allowed; }
+        
+        .card {
+            width: 120px; height: 180px;
+            border: 1px solid #00ffcc;
+            background: rgba(0, 255, 204, 0.05);
+            transition: 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+        .card:hover:not(.disabled) { transform: translateY(-20px); box-shadow: 0 0 20px #00ffcc; background: #00ffcc; color: #000; }
+        .card.disabled { opacity: 0.2; cursor: not-allowed; border-color: #333; }
+        .card-inner { padding: 10px; display: flex; flex-direction: column; height: 100%; justify-content: space-between; }
+        
         .hidden { display: none; }
-        .log-entry { animation: fadeIn 0.3s ease-out; border-bottom: 1px solid #111; padding: 2px 0; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
+        .glow-red { color: #ff3366; border-color: #ff3366; }
+        .glow-blue { color: #3399ff; border-color: #3399ff; }
+        .glow-gold { color: #ffcc33; border-color: #ffcc33; }
     </style>
 </head>
 <body class="crt h-screen flex flex-col items-center justify-center p-4">
 
     <!-- ЛОББИ -->
     <div id="lobby" class="text-center z-10 w-full max-w-md">
-        <h1 class="text-6xl font-bold mb-4 tracking-tighter italic italic">THE FIRST</h1>
-        <p class="text-[10px] tracking-[0.3em] uppercase opacity-40 mb-10">Сетевой протокол: Активен</p>
+        <h1 class="text-6xl font-black mb-2 tracking-tighter italic">THE <span class="text-white">FIRST</span></h1>
+        <p class="text-[10px] tracking-[0.4em] uppercase opacity-40 mb-12">Сетевой протокол v.2.0</p>
         
         <div class="flex flex-col gap-4 mb-10">
-            <button onclick="createNewDuel()" class="card-btn text-xl">Создать дуэль</button>
-            <p id="room-code-display" class="text-3xl text-white font-bold tracking-widest"></p>
+            <button onclick="createNewDuel()" class="border border-white py-4 text-xl font-bold hover:bg-white hover:text-black transition">СОЗДАТЬ ДУЭЛЬ</button>
+            <p id="room-code-display" class="text-4xl text-white font-bold tracking-widest"></p>
         </div>
 
         <div class="border-t border-zinc-800 pt-8 flex flex-col items-center">
-            <input id="room-id-input" type="text" maxlength="4" placeholder="КОД (4 ЦИФРЫ)" class="p-3 bg-zinc-900 border border-zinc-700 mb-4 text-center text-white outline-none focus:border-cyan-400 w-full">
-            <button onclick="joinDuel()" class="card-btn border-red-500 text-red-500 hover:bg-red-500 w-full">Вступить в бой</button>
+            <input id="room-id-input" type="text" maxlength="4" placeholder="КОД ИЗ 4 ЦИФР" class="p-4 bg-zinc-900 border border-zinc-700 mb-4 text-center text-white outline-none focus:border-cyan-400 w-full font-bold">
+            <button onclick="joinDuel()" class="border border-red-500 text-red-500 py-4 w-full font-bold hover:bg-red-500 hover:text-white transition">ВСТУПИТЬ В БОЙ</button>
         </div>
-        <p id="status-msg" class="mt-6 text-zinc-600 text-xs uppercase tracking-widest"></p>
+        <p id="status-msg" class="mt-6 text-zinc-600 text-[10px] uppercase tracking-widest animate-pulse"></p>
     </div>
 
     <!-- ИГРОВОЕ ПОЛЕ -->
-    <div id="game-ui" class="hidden w-full max-w-2xl z-10">
-        <div class="flex justify-between items-end mb-10 border-b border-zinc-800 pb-6">
-            <div class="text-left">
-                <p class="text-[10px] opacity-50 uppercase tracking-widest">Твой статус</p>
-                <p class="text-xl font-bold text-cyan-400" id="p-rank">ПЕРВЫЙ</p>
-                <div class="text-5xl text-white mt-1 font-black">HP: <span id="my-hp">6</span></div>
-            </div>
-            <div class="text-center pb-2">
-                <div class="text-[10px] opacity-30 uppercase">vs</div>
-            </div>
-            <div class="text-right">
-                <p class="text-[10px] opacity-50 uppercase tracking-widest">Враг</p>
-                <p id="enemy-rank" class="text-xl font-bold text-red-500 italic uppercase">Охотник</p>
-                <div class="text-5xl text-red-500 mt-1 font-black">HP: <span id="enemy-hp">6</span></div>
-            </div>
-        </div>
-
-        <div id="turn-indicator" class="text-center mb-8 text-sm font-bold uppercase tracking-[0.5em] text-yellow-500 animate-pulse">
-            Синхронизация...
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 mb-8" id="controls">
-            <button onclick="playMove('STRIKE')" id="strike-btn" class="card-btn py-6">Укол <span class="block text-[10px] opacity-60">[-2 HP]</span></button>
-            <button onclick="playMove('BLOCK')" id="block-btn" class="card-btn border-blue-500 text-blue-500 py-6">Блок <span class="block text-[10px] opacity-60">[Защита]</span></button>
-        </div>
+    <div id="game-ui" class="hidden w-full max-w-5xl z-10 h-full flex flex-col justify-between py-10">
         
-        <div class="bg-black/50 p-4 rounded border border-zinc-900">
-            <p class="text-[10px] uppercase opacity-30 mb-2 tracking-widest">Архив действий</p>
-            <div id="battle-log" class="h-24 overflow-y-auto text-[10px] text-zinc-500 space-y-1"></div>
+        <!-- Верх: Враг -->
+        <div class="flex justify-between items-center px-10 border-l-2 border-red-900">
+            <div class="text-left">
+                <p class="text-xs opacity-50 uppercase tracking-widest">Противник</p>
+                <p id="enemy-rank" class="text-2xl font-black italic text-red-600">ОХОТНИК</p>
+                <div class="text-6xl font-black text-white">HP: <span id="enemy-hp">6</span></div>
+            </div>
+            <div id="enemy-intent" class="text-sm border border-red-900 p-2 text-red-900 uppercase font-bold">Ожидание...</div>
+        </div>
+
+        <!-- Центр: Лог боя -->
+        <div class="flex flex-col items-center">
+            <div id="turn-indicator" class="text-2xl font-black uppercase tracking-[0.5em] text-yellow-500 mb-4">СИНХРОНИЗАЦИЯ</div>
+            <div id="battle-log" class="h-24 overflow-y-auto text-[10px] text-zinc-600 space-y-1 text-center w-full max-w-md"></div>
+        </div>
+
+        <!-- Низ: Игрок и Карты -->
+        <div class="flex flex-col gap-6">
+            <div class="flex justify-between items-end px-10 border-r-2 border-cyan-900">
+                <div class="text-left">
+                    <p class="text-xs opacity-50 uppercase tracking-widest">Твой статус</p>
+                    <p class="text-2xl font-black text-cyan-400">ПЕРВЫЙ</p>
+                    <div class="text-6xl font-black text-white">HP: <span id="my-hp">6</span></div>
+                </div>
+            </div>
+
+            <!-- РУКА КАРТ -->
+            <div id="hand" class="flex justify-center gap-4 h-48 items-end">
+                <!-- Карты будут тут -->
+            </div>
         </div>
     </div>
 
-    <!-- ПОБЕДА / ПОРАЖЕНИЕ -->
-    <div id="end-screen" class="hidden fixed inset-0 z-[200] bg-black/95 flex flex-col items-center justify-center text-center p-6">
-        <h1 id="end-title" class="text-8xl font-black mb-4 italic uppercase">Обнулен</h1>
-        <p id="end-sub" class="text-zinc-500 max-w-md mb-10 tracking-widest uppercase">Твоя колода рассыпалась в прах.</p>
-        <button onclick="location.reload()" class="card-btn px-10">Вернуться в систему</button>
+    <!-- ФИНАЛЬНЫЙ ЭКРАН -->
+    <div id="end-screen" class="hidden fixed inset-0 z-[200] bg-black flex flex-col items-center justify-center text-center p-6">
+        <h1 id="end-title" class="text-9xl font-black mb-4 italic uppercase">ОБНУЛЕН</h1>
+        <p id="end-sub" class="text-zinc-500 max-w-md mb-10 tracking-widest uppercase">Твоя колода рассыпалась.</p>
+        <button onclick="location.reload()" class="border border-white px-10 py-4 hover:bg-white hover:text-black">РЕСТАРТ</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // КОНФИГУРАЦИЯ С ИСПРАВЛЕННЫМ URL
         const firebaseConfig = {
             apiKey: "AIzaSyBMTaOtOQLsdJBLjN1AXO6X_NW47xSOMno",
             authDomain: "first-d1462.firebaseapp.com",
@@ -93,40 +107,52 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        const CARDS = {
+            STRIKE: { name: 'УКОЛ', desc: '-2 HP', color: 'glow-red', type: 'attack', val: 2 },
+            BLOCK: { name: 'БЛОК', desc: 'ЗАЩИТА', color: 'glow-blue', type: 'defend' },
+            ECHO: { name: 'ЭХО', desc: 'HP x 2', color: 'glow-gold', type: 'special' },
+            ALL_IN: { name: 'ВА-БАНК', desc: '-5 HP / -РУКА', color: 'glow-gold', type: 'attack', val: 5 },
+            SHADOW: { name: 'ТЕНЬ', desc: '50% УКЛОН', color: 'glow-blue', type: 'defend' }
+        };
+
         let roomID = null;
         let myRole = null; 
-        let currentTurn = "";
+        let myHand = [];
         let isDead = false;
 
         // --- ЛОББИ ---
         window.createNewDuel = async function() {
             roomID = Math.floor(1000 + Math.random() * 9000);
             myRole = 'player1';
+            myHand = generateHand();
             
-            const roomRef = ref(db, 'rooms/' + roomID);
-            await set(roomRef, {
+            await set(ref(db, 'rooms/' + roomID), {
                 status: "waiting",
-                player1: { hp: 6, blocking: false },
-                player2: { hp: 6, blocking: false },
+                player1: { hp: 6, blocking: false, hand: myHand },
+                player2: { hp: 6, blocking: false, hand: generateHand() },
                 turn: "player1",
-                lastAction: "Дуэль создана"
+                lastAction: "НАЧАЛО ЦИКЛА"
             });
 
             document.getElementById('room-code-display').innerText = roomID;
-            document.getElementById('status-msg').innerText = "Ожидание цели...";
+            document.getElementById('status-msg').innerText = "ОЖИДАНИЕ ОБЪЕКТА...";
             listenToRoom();
         };
 
         window.joinDuel = function() {
             roomID = document.getElementById('room-id-input').value;
-            if(!roomID || roomID.length < 4) return alert("Введите 4 цифры");
+            if(!roomID) return;
             myRole = 'player2';
-            
-            update(ref(db, 'rooms/' + roomID), { status: "active", lastAction: "Противник подключен" });
+            update(ref(db, 'rooms/' + roomID), { status: "active", lastAction: "ОБЪЕКТ ПОДКЛЮЧЕН" });
             listenToRoom();
         };
 
-        // --- ГЕЙМПЛЕЙ ---
+        function generateHand() {
+            const keys = Object.keys(CARDS);
+            return Array.from({length: 5}, () => keys[Math.floor(Math.random() * keys.length)]);
+        }
+
+        // --- ИГРОВАЯ ЛОГИКА ---
         function listenToRoom() {
             onValue(ref(db, 'rooms/' + roomID), (snapshot) => {
                 const data = snapshot.val();
@@ -136,64 +162,94 @@
                     document.getElementById('lobby').classList.add('hidden');
                     document.getElementById('game-ui').classList.remove('hidden');
                     
-                    currentTurn = data.turn;
                     const me = data[myRole];
                     const enemy = (myRole === 'player1') ? data.player2 : data.player1;
+                    myHand = me.hand || [];
 
-                    updateUI(me, enemy, data.lastAction);
+                    updateUI(me, enemy, data.turn, data.lastAction);
                 }
             });
         }
 
-        function updateUI(me, enemy, action) {
+        function updateUI(me, enemy, turn, action) {
             document.getElementById('my-hp').innerText = me.hp;
             document.getElementById('enemy-hp').innerText = enemy.hp;
             
-            const isMyTurn = (currentTurn === myRole);
+            const isMyTurn = (turn === myRole);
             const indicator = document.getElementById('turn-indicator');
-            indicator.innerText = isMyTurn ? "ТВОЙ ХОД" : "ОЖИДАНИЕ ВРАГА";
-            indicator.className = isMyTurn ? "text-center mb-8 text-sm font-bold uppercase tracking-[0.5em] text-cyan-400 animate-pulse" : "text-center mb-8 text-sm font-bold uppercase tracking-[0.5em] text-red-900";
+            indicator.innerText = isMyTurn ? "ТВОЙ ХОД" : "ХОД ВРАГА";
+            indicator.className = isMyTurn ? "text-2xl font-black uppercase tracking-[0.5em] text-cyan-400 animate-pulse" : "text-2xl font-black uppercase tracking-[0.5em] text-red-900";
 
-            document.getElementById('strike-btn').disabled = !isMyTurn;
-            document.getElementById('block-btn').disabled = !isMyTurn;
+            renderHand(isMyTurn);
+            if(action) addLog(action);
 
-            if (action) addLog(action);
-
-            // Проверка смерти
             if(me.hp <= 0 && !isDead) endGame(false);
             if(enemy.hp <= 0 && !isDead) endGame(true);
         }
 
-        window.playMove = function(type) {
-            if(currentTurn !== myRole || isDead) return;
+        function renderHand(active) {
+            const handEl = document.getElementById('hand');
+            handEl.innerHTML = '';
+            myHand.forEach((cardKey, index) => {
+                const card = CARDS[cardKey];
+                const cardDiv = document.createElement('div');
+                cardDiv.className = `card ${card.color} ${!active ? 'disabled' : ''}`;
+                cardDiv.innerHTML = `
+                    <div class="card-inner">
+                        <div class="text-[8px] opacity-40">#${cardKey}</div>
+                        <div class="text-lg font-black leading-none">${card.name}</div>
+                        <div class="text-[9px] uppercase font-bold">${card.desc}</div>
+                    </div>
+                `;
+                if(active) cardDiv.onclick = () => playCard(cardKey, index);
+                handEl.appendChild(cardDiv);
+            });
+        }
 
+        window.playCard = function(cardKey, index) {
             const enemyRole = (myRole === 'player1') ? 'player2' : 'player1';
             const roomRef = ref(db, 'rooms/' + roomID);
             
             onValue(roomRef, (snapshot) => {
                 const data = snapshot.val();
+                if(data.turn !== myRole) return;
+
                 const enemy = data[enemyRole];
                 const me = data[myRole];
                 
-                let nextHp = enemy.hp;
+                let nextEnemyHp = enemy.hp;
+                let nextMyHp = me.hp;
                 let actionText = "";
-
-                if(type === 'STRIKE') {
-                    if(enemy.blocking) {
-                        actionText = `${myRole} ударил в БЛОК!`;
-                    } else {
-                        nextHp = Math.max(0, enemy.hp - 2);
-                        actionText = `${myRole} нанес УКОЛ (-2)`;
-                    }
-                } else if(type === 'BLOCK') {
-                    actionText = `${myRole} выставил защиту`;
+                let newHand = [...myHand];
+                newHand.splice(index, 1);
+                
+                // Эффекты карт
+                const card = CARDS[cardKey];
+                if(cardKey === 'STRIKE') {
+                    if(enemy.blocking) actionText = `${myRole}: УКОЛ В БЛОК!`;
+                    else { nextEnemyHp -= 2; actionText = `${myRole}: УКОЛ (-2)`; }
+                } else if(cardKey === 'BLOCK') {
+                    actionText = `${myRole}: УКРЫТИЕ`;
+                } else if(cardKey === 'ECHO') {
+                    nextMyHp *= 2;
+                    actionText = `${myRole}: ЭХО ПУСТОТЫ (x2)`;
+                } else if(cardKey === 'ALL_IN') {
+                    nextEnemyHp -= 5;
+                    newHand = []; // Сжигаем руку
+                    actionText = `${myRole}: ВА-БАНК! (-5)`;
+                } else if(cardKey === 'SHADOW') {
+                    actionText = `${myRole}: УШЕЛ В ТЕНЬ`;
                 }
 
-                // Отправляем данные (только один раз!)
+                // Если рука пуста, добираем
+                if(newHand.length === 0) newHand = generateHand();
+
                 update(ref(db, 'rooms/' + roomID), {
-                    [enemyRole + '/hp']: nextHp,
-                    [enemyRole + '/blocking']: false, // Сбрасываем блок врага после его получения урона или хода
-                    [myRole + '/blocking']: (type === 'BLOCK'),
+                    [enemyRole + '/hp']: Math.max(0, nextEnemyHp),
+                    [enemyRole + '/blocking']: false,
+                    [myRole + '/hp']: nextMyHp,
+                    [myRole + '/blocking']: (cardKey === 'BLOCK' || cardKey === 'SHADOW'),
+                    [myRole + '/hand']: newHand,
                     turn: enemyRole,
                     lastAction: actionText
                 });
@@ -202,26 +258,22 @@
 
         function addLog(msg) {
             const log = document.getElementById('battle-log');
-            if(log.firstChild && log.firstChild.innerText === msg) return;
+            if(log.firstChild && log.firstChild.innerText === `> ${msg}`) return;
             const entry = document.createElement('div');
-            entry.className = "log-entry";
             entry.innerText = `> ${msg}`;
             log.prepend(entry);
         }
 
         function endGame(win) {
             isDead = true;
-            const screen = document.getElementById('end-screen');
+            document.getElementById('end-screen').classList.remove('hidden');
             const title = document.getElementById('end-title');
-            screen.classList.remove('hidden');
             if(win) {
                 title.innerText = "ВЫСШИЙ";
-                title.className = "text-8xl font-black mb-4 italic uppercase text-cyan-400";
-                document.getElementById('end-sub').innerText = "Ты поглотил чужую колоду.";
+                title.style.color = "#00ffcc";
+                document.getElementById('end-sub').innerText = "Ты поглотил его реальность.";
             }
         }
-
-        window.oncontextmenu = (e) => e.preventDefault();
     </script>
 </body>
 </html>
